@@ -15,12 +15,18 @@ cd ComfyUI-running-on-runpod-container
 
 2. (Optional) Create an `env` file to specify the ComfyUI version you want to use. If not specified, it will use the default version defined in the `build.sh` script.
 ```bash
-echo "COMFYUI_TAG=v0.N.YY" > env
+echo "COMFYUI_TAG=v0.5.NN" > env
 ```
 
 3. Build the ComfyUI container.
 ```bash
 ./build.sh
+```
+
+4. Push the container to AWS Elastic Container Registry (ECR).
+```bash
+sed -i 's|export AWS_PUBLIC_ECR_URL=.*$|export AWS_PUBLIC_ECR_URL="public.ecr.aws/{USER ECR}"|' push_aws_ecr.sh
+./push_aws_ecr.sh
 ```
 
 ## Thanks
