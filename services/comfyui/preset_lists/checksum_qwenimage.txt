@@ -1,0 +1,4 @@
+# SHA256SUM file_path
+98763a127701eb6fb59096f7742cb3aa7d64ed510b9f4e882d8351f8176e3ce3 /workspace/data/models/diffusion_models/qwen_image_fp8_e4m3fn.safetensors
+cb5636d852a0ea6a9075ab1bef496c0db7aef13c02350571e388aea959c5c0b4 /workspace/data/models/text_encoders/qwen_2.5_vl_7b_fp8_scaled.safetensors
+a70580f0213e67967ee9c95f05bb400e8fb08307e017a924bf3441223e023d1f /workspace/data/models/vae/qwen_image_vae.safetensors

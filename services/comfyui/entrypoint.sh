@@ -62,6 +62,16 @@ if [ "${ENABLED_FLUX2_MODELS_CHECKSUM:-"false"}" = "true" ] || [ "${ENABLED_FLUX
     cat /container/preset_lists/checksum_flux2.txt >> "${CHECKSUM_LIST}"
 fi
 
+# Qwen-Image Models
+if [ "${ENABLED_QWENIMAGE_MODELS_DOWNLOAD:-"false"}" = "true" ] || [ "${ENABLED_QWENIMAGE_MODELS_DOWNLOAD:-"0"}" = "1" ]; then
+    echo "Qwen-Image Models download enabled."
+    cat /container/preset_lists/download_qwenimage.txt >> "${DOWNLOAD_LIST}"
+fi
+if [ "${ENABLED_QWENIMAGE_MODELS_CHECKSUM:-"false"}" = "true" ] || [ "${ENABLED_QWENIMAGE_MODELS_CHECKSUM:-"0"}" = "1" ]; then
+    echo "Qwen-Image Models checksum verification enabled."
+    cat /container/preset_lists/checksum_qwenimage.txt >> "${CHECKSUM_LIST}"
+fi
+
 # Custom user lists
 if [ -f "${DOWNLOAD_DIR}/download_list.txt" ]; then
     echo "Custom download list found in download directory. Appending to download list."
