@@ -1,4 +1,5 @@
 #!/bin/bash
+
 set -Eeuo pipefail
 
 # --- 1. ディレクトリ作成 ---
@@ -33,6 +34,12 @@ echo "Venv: ${VENV_PATH}"
 echo "Python: $(which python) ($(python --version))"
 echo "----- torch info -----"
 python -c "import torch; print('torch=', torch.__version__); print('torch_cuda=', torch.version.cuda); print('avail=', torch.cuda.is_available())"
+
+export TORCH_CUDA_AVAILABLE=$(python -c "import torch; print(torch.cuda.is_available())")
+if [ "${TORCH_CUDA_AVAILABLE}" = "False" ]; then
+    echo "CUDA is not available. Dropping to shell for debugging."
+    exec /bin/bash || exec /bin/sh
+fi
 
 # --- 4. safetensors の自動ダウンロード機能 ---
 export DOWNLOAD_LIST="/container/download_list.txt"
