@@ -2,6 +2,7 @@
 FROM docker.io/nvidia/cuda:12.8.1-runtime-ubuntu24.04
 ENV COMFYUI_DIR=/comfyui
 ENV UV_PYTHON_INSTALL_DIR=/opt/python
+ENV UV_LINK_MODE=copy
 ENV VENV_PATH=/opt/python-venv
 ENV WORKSPACE="/workspace"
 ENV PYTHONPATH="${PYTHONPATH}:${PWD}"
@@ -25,17 +26,16 @@ RUN set -eux \
     && if [ -z "${COMFYUI_TAG}" ]; then export COMFYUI_TAG="$(git describe --tags --abbrev=0)"; fi \
     && git checkout tags/${COMFYUI_TAG} \
     && uv pip install -r requirements.txt \
-    && uv pip install -r manager_requirements.txt
-
-WORKDIR ${COMFYUI_DIR}
+    && uv pip install -r manager_requirements.txt \
+    && rm -rf /root/.cache/uv /root/.cache/pip /tmp/*
 
 COPY . /container/
-
 RUN set -eux \
     && chmod u+x /container/entrypoint.sh \
     && cp /container/extra_model_paths.yaml ${COMFYUI_DIR} \
     && uv pip uninstall pynvml \
-    && uv pip install -U nvidia-ml-py
+    && uv pip install -U nvidia-ml-py \
+    && rm -rf /root/.cache/uv /root/.cache/pip /tmp/*
 
 # NVIDIAランタイムの設定
 ENV NVIDIA_VISIBLE_DEVICES=all
@@ -45,5 +45,6 @@ ENV NVIDIA_DISABLE_REQUIRE=1
 ENV CLI_ARGS="--dont-print-server --enable-manager"
 
 EXPOSE 8188 8888
+WORKDIR ${COMFYUI_DIR}
 ENTRYPOINT ["/container/entrypoint.sh"]
-CMD python3 -u main.py --listen --port 8188 ${CLI_ARGS}
+CMD ["python3", "-u", "main.py", "--listen", "--port", "8188", "${CLI_ARGS}"]

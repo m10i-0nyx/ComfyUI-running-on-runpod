@@ -1,6 +1,6 @@
 comfyui:
-    base_path: /workspace/data/
-    custom_nodes: /workspace/comfyui/custom_nodes
+    base_path: /workspace/data
+    custom_nodes: /workspace/comfyui/custom_nodes/
     checkpoints: models/checkpoints/
     text_encoders: |
         models/text_encoders/
