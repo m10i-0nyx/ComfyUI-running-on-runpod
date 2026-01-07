@@ -16,7 +16,8 @@ RUN set -eux \
     && rm -rf /var/lib/apt/lists/* \
     && curl -LsSf https://astral.sh/uv/install.sh | sh \
     && uv venv -p 3.13 ${VENV_PATH} \
-    && . ${VENV_PATH}/bin/activate
+    && . ${VENV_PATH}/bin/activate \
+    && ${WORKSPACE}/comfyui/{custom_nodes,scripts}
 
 RUN set -eux \
     # ComfyUI をクローン,　依存関係をインストール
@@ -28,38 +29,38 @@ RUN set -eux \
 
 RUN set -eux \
     # ComfyUI-Impact-Pack ノードをインストール
-    && cd ${COMFYUI_DIR}/custom_nodes \
-    && git clone -b Main --depth 1 https://github.com/ltdrdata/ComfyUI-Impact-Pack.git comfyuui-impact-pack \
-    && cd comfyuui-impact-pack \
+    && cd ${WORKSPACE}/comfyui/custom_nodes \
+    && git clone -b Main --depth 1 https://github.com/ltdrdata/ComfyUI-Impact-Pack.git comfyui-impact-pack \
+    && cd comfyui-impact-pack \
     && uv pip install -r requirements.txt
 
 RUN set -eux \
     # rgthree-comfy ノードをインストール
-    && cd ${COMFYUI_DIR}/custom_nodes \
+    && cd ${WORKSPACE}/comfyui/custom_nodes \
     && git clone -b main --depth 1 https://github.com/rgthree/rgthree-comfy.git rgthree-comfy \
     && cd rgthree-comfy \
     && uv pip install -r requirements.txt
 
 RUN set -eux \
     # comfyui-crystools ノードをインストール
-    && cd ${COMFYUI_DIR}/custom_nodes \
+    && cd ${WORKSPACE}/comfyui/custom_nodes \
     && git clone -b main --depth 1 https://github.com/crystian/comfyui-crystools.git comfyui-crystools \
     && cd comfyui-crystools \
     && uv pip install -r requirements.txt
 
 RUN set -eux \
     # ComfyUI-Custom-Scripts ノードをインストール
-    && cd ${COMFYUI_DIR}/custom_nodes \
+    && cd ${WORKSPACE}/comfyui/custom_nodes \
     && git clone -b main --depth 1 https://github.com/pythongosssss/ComfyUI-Custom-Scripts.git comfyui-custom-scripts
 
 RUN set -eux \
     # ComfyUI-Autocomplete-Plus ノードをインストール
-    && cd ${COMFYUI_DIR}/custom_nodes \
+    && cd ${WORKSPACE}/comfyui/custom_nodes \
     && git clone -b main --depth 1 https://github.com/newtextdoc1111/ComfyUI-Autocomplete-Plus.git comfyui-autocomplete-plus
 
 RUN set -eux \
     # ComfyUI-ppm ノードをインストール
-    && cd ${COMFYUI_DIR}/custom_nodes \
+    && cd ${WORKSPACE}/comfyui/custom_nodes \
     && git clone -b master --depth 1 https://github.com/pamparamm/ComfyUI-ppm.git comfyui-ppm
 
 WORKDIR ${COMFYUI_DIR}
