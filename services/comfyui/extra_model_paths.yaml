@@ -1,15 +1,19 @@
----
-a111:
-  base_path: /workspace
-  checkpoints: data/models/checkpoints
-  clip_vision: data/models/clip_vision
-  controlnet: data/models/controlnet
-  custom_nodes: /comfyui/custom_nodes
-  diffusion_models: data/models/diffusion_models
-  embeddings: data/embeddings
-  gligen: data/models/gligen
-  hypernetworks: data/models/hypernetworks
-  loras: data/models/loras
-  text_encoders: data/models/text_encoders
-  upscale_models: data/models/upscale_models
-  vae: data/models/vae
+comfyui:
+    base_path: /workspace/data/
+    custom_nodes: /workspace/comfyui/custom_nodes
+    checkpoints: models/checkpoints/
+    text_encoders: |
+        models/text_encoders/
+        models/clip/
+    clip_vision: models/clip_vision/
+    configs: models/configs/
+    controlnet: models/controlnet/
+    diffusion_models: |
+        models/diffusion_models/
+        models/unet/
+    embeddings: models/embeddings/
+    loras: models/loras/
+    upscale_models: models/upscale_models/
+    vae: models/vae/
+    audio_encoders: models/audio_encoders/
+    model_patches: models/model_patches/

@@ -12,7 +12,6 @@ declare -A MOUNTS
 MOUNTS["/root/.cache"]="${WORKSPACE}/data/.cache"
 MOUNTS["${WORKSPACE}/input"]="${WORKSPACE}/data/config/input"
 MOUNTS["/comfyui/output"]="${WORKSPACE}/output"
-MOUNTS["/comfyui/custom_nodes"]="${WORKSPACE}/comfyui/custom_nodes"
 
 for to_path in "${!MOUNTS[@]}"; do
     set -Eeuo pipefail

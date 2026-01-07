@@ -16,8 +16,7 @@ RUN set -eux \
     && rm -rf /var/lib/apt/lists/* \
     && curl -LsSf https://astral.sh/uv/install.sh | sh \
     && uv venv -p 3.13 ${VENV_PATH} \
-    && . ${VENV_PATH}/bin/activate \
-    && ${WORKSPACE}/comfyui/{custom_nodes,scripts}
+    && . ${VENV_PATH}/bin/activate
 
 RUN set -eux \
     # ComfyUI をクローン,　依存関係をインストール
@@ -25,7 +24,8 @@ RUN set -eux \
     && cd ${COMFYUI_DIR} \
     && if [ -z "${COMFYUI_TAG}" ]; then export COMFYUI_TAG="$(git describe --tags --abbrev=0)"; fi \
     && git checkout tags/${COMFYUI_TAG} \
-    && uv pip install -r requirements.txt
+    && uv pip install -r requirements.txt \
+    && mkdir -p ${WORKSPACE}/comfyui/custom_nodes
 
 RUN set -eux \
     # ComfyUI-Impact-Pack ノードをインストール
@@ -66,12 +66,12 @@ RUN set -eux \
 WORKDIR ${COMFYUI_DIR}
 
 COPY . /container/
+
 RUN set -eux \
     && chmod u+x /container/entrypoint.sh \
     && cp /container/extra_model_paths.yaml ${COMFYUI_DIR} \
-    && mkdir -p ${COMFYUI_DIR}/custom_nodes/ \
-    && mv /container/*.py ${COMFYUI_DIR}/custom_nodes/ \
-    && chmod a+x ${COMFYUI_DIR}/custom_nodes/*.py \
+    && mv /container/*.py ${WORKSPACE}/comfyui/custom_nodes/ \
+    && chmod a+x ${WORKSPACE}/comfyui/custom_nodes/*.py \
     && uv pip uninstall pynvml \
     && uv pip install -U nvidia-ml-py
 
