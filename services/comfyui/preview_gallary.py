@@ -3,10 +3,10 @@ import http.server
 import math
 import os
 import socketserver
+import tarfile
 import tempfile
 import threading
 import time
-import zipfile
 
 # -----------------------------
 # 設定
@@ -21,70 +21,70 @@ PAGE_SIZE = int(os.environ.get("COMFYUI_PREVIEW_GALLERY_PAGE_SIZE", 10))  # 1ペ
 IMAGE_EXTS = ('.png', '.jpg', '.jpeg', '.gif', '.webp', '.bmp', '.mp4', '.avi', '.webm')
 
 # -----------------------------------------------
-# ZIP ファイルバックグラウンド生成の状態管理
+# TAR ファイルバックグラウンド生成の状態管理
 # -----------------------------------------------
-class ZipGeneratorState:
+class TarGeneratorState:
     def __init__(self):
-        self.zip_path: str | None = None  # 生成されたZIPファイルのパス
+        self.tar_path: str | None = None  # 生成されたTARファイルのパス
         self.lock = threading.Lock()
         self.generating = False  # 生成中フラグ
 
-zip_generator = ZipGeneratorState()
+tar_generator = TarGeneratorState()
 
-def request_make_zip(images_list):
-    """バックグラウンドでZIPファイルを生成（同時に1リクエストのみ処理）"""
-    with zip_generator.lock:
-        if zip_generator.generating:
+def request_make_tar(images_list):
+    """バックグラウンドでTARファイルを生成（同時に1リクエストのみ処理）"""
+    with tar_generator.lock:
+        if tar_generator.generating:
             # 既に生成中なら何もしない
             return
-        zip_generator.generating = True
+        tar_generator.generating = True
 
     def _generate():
         try:
             if not images_list:
-                zip_generator.zip_path = None
+                tar_generator.tar_path = None
                 return
 
-            # 既存のZIPファイルを削除
-            if zip_generator.zip_path and os.path.exists(zip_generator.zip_path):
+            # 既存のTARファイルを削除
+            if tar_generator.tar_path and os.path.exists(tar_generator.tar_path):
                 try:
-                    os.remove(zip_generator.zip_path)
+                    os.remove(tar_generator.tar_path)
                 except Exception:
                     pass
 
-            # 新しい一時ファイルでZIP作成
-            tmp = tempfile.NamedTemporaryFile(suffix='.zip', delete=False, dir=OUTPUT_DIR)
+            # 新しい一時ファイルでTAR作成
+            tmp = tempfile.NamedTemporaryFile(suffix='.tar', delete=False, dir=OUTPUT_DIR)
             tmp_path = tmp.name
             tmp.close()
 
-            with zipfile.ZipFile(tmp_path, 'w', compression=zipfile.ZIP_DEFLATED) as zf:
+            with tarfile.open(tmp_path, 'w:') as tf:
                 for full, rel in images_list:
                     try:
-                        zf.write(full, arcname=rel)
+                        tf.add(full, arcname=rel)
                     except Exception:
                         # 個別ファイル書込失敗は無視して続行
                         continue
 
             # 成功したら保存
-            with zip_generator.lock:
-                zip_generator.zip_path = tmp_path
+            with tar_generator.lock:
+                tar_generator.tar_path = tmp_path
         finally:
-            with zip_generator.lock:
-                zip_generator.generating = False
+            with tar_generator.lock:
+                tar_generator.generating = False
 
     # バックグラウンドスレッドで実行
     thread = threading.Thread(target=_generate, daemon=True)
     thread.start()
 
-def remove_zip():
-    """生成されたZIPファイルを削除（新規生成可能にする）"""
-    with zip_generator.lock:
-        if zip_generator.zip_path and os.path.exists(zip_generator.zip_path):
+def remove_tar():
+    """生成されたTARファイルを削除（新規生成可能にする）"""
+    with tar_generator.lock:
+        if tar_generator.tar_path and os.path.exists(tar_generator.tar_path):
             try:
-                os.remove(zip_generator.zip_path)
+                os.remove(tar_generator.tar_path)
             except Exception:
                 pass
-        zip_generator.zip_path = None
+        tar_generator.tar_path = None
 
 # -----------------------------
 # HTTP サーバスレッド
@@ -137,28 +137,28 @@ class ThreadedHTTPServer(threading.Thread):
 
                 return imgs
 
-            def send_zip_file(self):
-                """生成されたZIPファイルをダウンロード"""
-                with zip_generator.lock:
-                    zip_path = zip_generator.zip_path
+            def send_tar_file(self):
+                """生成されたTARファイルをダウンロード"""
+                with tar_generator.lock:
+                    tar_path = tar_generator.tar_path
 
-                if not zip_path or not os.path.exists(zip_path):
+                if not tar_path or not os.path.exists(tar_path):
                     self.send_response(404)
                     self.send_header('Content-Type', 'text/plain; charset=utf-8')
                     self.end_headers()
-                    self.wfile.write(b'ZIP file not ready. Please try again.')
+                    self.wfile.write(b'TAR file not ready. Please try again.')
                     return
 
                 try:
-                    size = os.path.getsize(zip_path)
+                    size = os.path.getsize(tar_path)
                     self.send_response(200)
-                    self.send_header('Content-Type', 'application/zip')
-                    self.send_header('Content-Disposition', 'attachment; filename="comfyui_preview_gallery.zip"')
+                    self.send_header('Content-Type', 'application/x-tar')
+                    self.send_header('Content-Disposition', 'attachment; filename="comfyui_preview_gallery.tar"')
                     self.send_header('Content-Length', str(size))
                     self.end_headers()
 
                     # ストリーミング送信（メモリ節約）
-                    with open(zip_path, 'rb') as f:
+                    with open(tar_path, 'rb') as f:
                         chunk_size = 64 * 1024
                         while True:
                             chunk = f.read(chunk_size)
@@ -211,20 +211,20 @@ class ThreadedHTTPServer(threading.Thread):
                     nav_parts.append(page_link(total_pages, "Last"))
                 nav_html = " | ".join(nav_parts) or ""
 
-                # ダウンロードリンクを追加（生成済みZIPをダウンロード）
-                with zip_generator.lock:
-                    is_generating = zip_generator.generating
-                    has_zip = (
-                        zip_generator.zip_path is not None
-                        and os.path.exists(zip_generator.zip_path)
+                # ダウンロードリンクを追加（生成済みTARをダウンロード）
+                with tar_generator.lock:
+                    is_generating = tar_generator.generating
+                    has_tar = (
+                        tar_generator.tar_path is not None
+                        and os.path.exists(tar_generator.tar_path)
                     )
 
-                if has_zip:
-                    download_link = '<a href="/download.zip" style="margin-left:16px;">Download ZIP</a>'
+                if has_tar:
+                    download_link = '<a href="/download.tar" style="margin-left:16px;">Download TAR</a>'
                 elif is_generating:
-                    download_link = '<span style="margin-left:16px;color:#666;">Generating ZIP... (please wait)</span>'
+                    download_link = '<span style="margin-left:16px;color:#666;">Generating TAR... (please wait)</span>'
                 else:
-                    download_link = '<a href="/request_make_zip" style="margin-left:16px;">Request ZIP (prepare download)</a>'
+                    download_link = '<a href="/request_make_tar" style="margin-left:16px;">Request TAR (prepare download)</a>'
 
                 html = f"""<!doctype html>
 <html lang="ja">
@@ -296,25 +296,25 @@ class ThreadedHTTPServer(threading.Thread):
                     self.send_response(404)
                     self.end_headers()
                     return
-                elif parsed.path == '/request_make_zip':
-                    # ZIPファイル生成をリクエスト
+                elif parsed.path == '/request_make_tar':
+                    # TARファイル生成をリクエスト
                     imgs = self.collect_all_images()
-                    request_make_zip(imgs)
+                    request_make_tar(imgs)
                     # リダイレクトしてHTMLを再表示
                     self.send_response(302)
                     self.send_header('Location', '/')
                     self.end_headers()
                     return
-                elif parsed.path == '/delete_zip':
-                    # 既存のZIPを削除して新規生成できるようにする
-                    remove_zip()
+                elif parsed.path == '/delete_tar':
+                    # 既存のTARを削除して新規生成できるようにする
+                    remove_tar()
                     # リダイレクトしてHTMLを再表示
                     self.send_response(302)
                     self.send_header('Location', '/')
                     self.end_headers()
                     return
-                elif parsed.path == '/download.zip':
-                    self.send_zip_file()
+                elif parsed.path == '/download.tar':
+                    self.send_tar_file()
                     return
 
                 self.path = parsed.path
