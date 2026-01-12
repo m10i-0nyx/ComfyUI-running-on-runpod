@@ -47,5 +47,4 @@ ENV CLI_ARGS="--dont-print-server --enable-manager"
 
 ENV NUMBER_OF_GPUS=${NUMBER_OF_GPUS:-1}
 EXPOSE ${LISTEN_PORT:-8188}
-ENTRYPOINT ["/container/entrypoint.sh"]
-CMD ["bash"]
+CMD ["bash", "/container/entrypoint.sh"]

@@ -192,9 +192,9 @@ fi
 
 # --- 7. コマンド実行 ---
 pushd ${COMFYUI_DIR}
-if [ "${NUMBER_OF_GPUS}" -gt 1 ]; then
+if [ ${NUMBER_OF_GPUS:-1} -gt 1 ]; then
     echo "***** Starting ${NUMBER_OF_GPUS} ComfyUI processes *****"
-    LISTEN_PORT=8188
+    LISTEN_PORT=${LISTEN_PORT:-8188}
     for ((idx=0; idx<${NUMBER_OF_GPUS}; idx++)); do
         CURRENT_PORT=$(($LISTEN_PORT + $idx))
         echo "***** Starting ComfyUI process $(($idx+1))/${NUMBER_OF_GPUS} on port ${CURRENT_PORT} with GPU ${idx} *****"
@@ -202,14 +202,13 @@ if [ "${NUMBER_OF_GPUS}" -gt 1 ]; then
     done
 else
     echo "***** Starting ComfyUI processes *****"
-    CUDA_VISIBLE_DEVICES=all python3 -u main.py --listen 0.0.0.0 --port 8188 ${CLI_ARGS} &
+    python3 -u main.py --listen 0.0.0.0 --port 8188 ${CLI_ARGS} &
 fi
 popd
 
 # --- 7. start preview gallery ---
-pushd /container
-chmod a+x preview_gallery.py
-python3 preview_gallery.py &
-popd
+if [ -z "${ENABLED_COMFYUI_PREVIEW_GALLERY:-''}" ] && [ "${ENABLED_COMFYUI_PREVIEW_GALLERY:-'false'}" = "true" ]; then
+    python3 -u /container/preview_gallery.py &
+fi
 
 wait
