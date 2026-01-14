@@ -329,6 +329,10 @@ class ThreadedHTTPServer(threading.Thread):
 def main():
     server = ThreadedHTTPServer(OUTPUT_DIR, PORT)
     server.start()
+    try:
+        server.join()
+    except KeyboardInterrupt:
+        print("\n[Preview-Gallery] Shutting down...")
 
 if __name__ == "__main__":
     main()
